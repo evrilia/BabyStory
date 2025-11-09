@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -13,7 +14,7 @@ class AdminController extends Controller
         return view('pages.auth.login-admin');
     }
 
-     
+
     // Proses login
     public function login(Request $request)
     {
@@ -41,5 +42,29 @@ class AdminController extends Controller
 
         return redirect()->route('admin.login');
     }
+
+    public function showChangePasswordForm()
+    {
+        return view('pages.admin.change-password');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:6|confirmed',
+        ]);
+
+        /** @var \App\Models\Admin $admin */
+        $admin = Auth::guard('admin')->user();
+
+        if (!Hash::check($request->current_password, $admin->password)) {
+            return back()->withErrors(['current_password' => 'Password lama salah']);
+        }
+
+        $admin->password = Hash::make($request->new_password);
+        $admin->save();
+
+        return back()->with('success', 'Password berhasil diperbarui!');
+    }
 }
-   

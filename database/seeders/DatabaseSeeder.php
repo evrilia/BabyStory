@@ -23,5 +23,8 @@ class DatabaseSeeder extends Seeder
 
         //panggil seeder untuk admin
         $this->call(AdminSeeder::class);
+        $this->call(StatisticSeeder::class);
+        $this->call(YearlyStatisticSeeder::class);
+
     }
 }
