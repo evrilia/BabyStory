@@ -6,25 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    // lalalal
     public function up(): void
     {
-        Schema::create('admins', function (Blueprint $table) {
+        Schema::create('yearly_statistics', function (Blueprint $table) {
             $table->id();
-            $table->string('username')->unique();
-            $table->string('password');
+            $table->year('tahun');
+            $table->string('produk_terlaris');
+            $table->integer('jumlah_transaksi');
+            $table->bigInteger('total_pendapatan');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('admins');
+        Schema::dropIfExists('yearly_statistics');
     }
 };
