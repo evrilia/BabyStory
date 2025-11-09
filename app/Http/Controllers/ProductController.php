@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
 
 class ProductController extends Controller
 {
@@ -66,6 +67,9 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::findOrFail($id);
+        return view('pages.user.product', compact('product'));
+
+        $product = Product::findOrFail($id);
         return view('pages.admin.products.detail', compact('product'));
     }
 
@@ -114,5 +118,19 @@ class ProductController extends Controller
         $product->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
+    }
+
+    public function indexByCategory(string $categorySlug)
+    {
+        // 1. Ambil data Kategori yang sedang aktif
+        $activeCategory = Category::where('slug', $categorySlug)->firstOrFail();
+
+        // 2. Ambil semua Kategori untuk Sidebar
+        $categories = Category::all();
+
+        // 3. Ambil Produk terkait (12 item per halaman, eager load category)
+        $products = Product::where('category_id', $activeCategory->id)
+            ->with('category')
+            ->paginate(12);
     }
 }
