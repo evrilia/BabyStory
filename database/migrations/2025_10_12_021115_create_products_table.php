@@ -22,13 +22,21 @@ return new class extends Migration
             $table->string('gambar')->nullable();
             $table->timestamps();
         });
-    }
 
+        Schema::table('products', function (Blueprint $table) {
+        $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+        });
+    }
     /**
      * Reverse the migrations.
      */
+   
     public function down(): void
     {
-        Schema::dropIfExists('products');
-    }
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('category_id');
+        });
+
+        Schema::dropIfExists('categories');
+    }   
 };

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -95,5 +96,23 @@ class CategoryController extends Controller
 
         return redirect()->route('admin.categories.index')
             ->with('success', 'Kategori berhasil dihapus!');
+    }
+
+    // public function show($slug)
+    // {
+    //     $categories = Category::all();
+    //     $category = Category::where('slug', $slug)->firstOrFail();
+    //     $products = $category->products()->paginate(12);
+
+    //     return view('user.category', compact('categories', 'products', 'category'));
+    // }
+
+    public function show($id)
+    {
+        $categories = Category::all();
+        $category = Category::findOrFail($id);
+        $products = $category->products()->paginate(12);
+
+        return view('pages.user.category', compact('categories', 'products', 'category'));
     }
 }

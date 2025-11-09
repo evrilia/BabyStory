@@ -40,5 +40,7 @@ class AppServiceProvider extends ServiceProvider
             // Kirim variabel ke view header
             $view->with(compact('notifications', 'hasNotifications'));
         });
+
+        
     }
 }

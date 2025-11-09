@@ -8,11 +8,15 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\User\HomeController;
 
 // Halaman utama
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [HomeController::class, 'index'])->name('user.home');
+Route::get('/category/{id}', [CategoryController::class, 'show'])->name('category.show');
+Route::get('/product/{id}', [HomeController::class, 'showProduct'])->name('user.product.show');
+Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
+// Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('user.category');
+
 
 // ===========================
 // Rute untuk ADMIN
@@ -67,7 +71,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
             Route::get('/{id}', [ProductController::class, 'show'])->name('show');
             Route::get('/admin/products/search', [ProductController::class, 'search']);
-
         });
         // ===================
         // STATISTICS
