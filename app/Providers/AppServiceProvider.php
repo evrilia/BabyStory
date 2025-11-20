@@ -9,27 +9,24 @@ use App\Models\Notification;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        // Kirim data notifikasi ke setiap tampilan header admin
+        // Kirim data notifikasi ke header admin
         View::composer('pages.admin.header', function ($view) {
             $notifications = [];
             $hasNotifications = false;
 
-            // Pastikan admin sedang login
+            // PERBAIKAN: Cek spesifik guard 'admin'
             if (Auth::guard('admin')->check()) {
-                $notifications = Notification::where('user_id', Auth::id())
+                // Ambil ID Admin yang sedang login
+                $adminId = Auth::guard('admin')->id();
+
+                $notifications = Notification::where('user_id', $adminId)
                     ->latest()
                     ->take(5)
                     ->get();
@@ -37,7 +34,6 @@ class AppServiceProvider extends ServiceProvider
                 $hasNotifications = $notifications->where('is_read', false)->count() > 0;
             }
 
-            // Kirim variabel ke view header
             $view->with(compact('notifications', 'hasNotifications'));
         });
     }

@@ -13,22 +13,17 @@ class Order extends Model
         'nama_pelanggan',
         'no_hp',
         'alamat',
+        'kota_tujuan',
+        'latitude',
+        'longitude',
         'ktp',
         'nama_produk',
+        'start_date',
+        'end_date',
         'lama_sewa',
         'biaya_pengiriman',
         'subtotal',
         'total',
         'status',
     ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
 }

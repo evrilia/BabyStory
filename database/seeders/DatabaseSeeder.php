@@ -2,29 +2,25 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Admin;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use App\Models\Category;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            StatisticSeeder::class,
+            YearlyStatisticSeeder::class,
         ]);
 
-        //panggil seeder untuk admin
-        $this->call(AdminSeeder::class);
-        $this->call(StatisticSeeder::class);
-        $this->call(YearlyStatisticSeeder::class);
-
+        // 2. Buat Akun Admin
+        Admin::create([
+            'username' => 'admin',
+            'password' => Hash::make('123456'), // Kita SET ke 123456 biar gampang
+        ]);
     }
 }

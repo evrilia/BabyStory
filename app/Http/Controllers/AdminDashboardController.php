@@ -11,12 +11,17 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
-        // sementara, isi nilai default
-        $totalUsers = 0;
-        $totalOrders = 0;
-        $totalProducts = 0;
-        $totalRevenue = 0;
-        $latestOrders = [];
+        // Menghitung total users (Asumsi semua user adalah pelanggan)
+        $totalUsers = User::count();
+        
+        $totalOrders = Order::count();
+        $totalProducts = Product::count();
+        
+        // Menghitung total revenue dari order yang 'Selesai' (Logic bisnis standar)
+        $totalRevenue = Order::where('status', 'Selesai')->sum('total');
+
+        // Ambil 5 order terbaru
+        $latestOrders = Order::latest()->take(5)->get();
 
         return view('pages.admin.dashboard', compact(
             'totalUsers',
@@ -25,22 +30,5 @@ class AdminDashboardController extends Controller
             'totalRevenue',
             'latestOrders'
         ));
-        // $totalUsers = User::count();
-        // $totalOrders = Order::count();
-        // $totalProducts = Product::count();
-        // $totalRevenue = Order::sum('total');
-
-        // $latestOrders = Order::with(['user', 'product'])
-        //     ->latest()
-        //     ->take(5)
-        //     ->get();
-
-        // return view('pages.admin.dashboard', compact(
-        //     'totalUsers',
-        //     'totalOrders',
-        //     'totalProducts',
-        //     'totalRevenue',
-        //     'latestOrders'
-        // ));
     }
 }

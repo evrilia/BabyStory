@@ -23,8 +23,8 @@
 
                     <div>
                         <label class="block text-sm font-semibold mb-1">Kategori</label>
-                        <input type="text" value="{{ $product->kategori->nama ?? '-' }}"
-                            class="w-full border rounded-md p-2" readonly>
+                        <input type="text" value="{{ $product->category->name ?? '-' }}"
+                            class="w-full border rounded-md p-2 bg-gray-100 text-gray-600" readonly>
                     </div>
 
                     <div>

@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    // Tampilkan semua produk, dengan search
     public function index(Request $request)
     {
         $query = Product::query();
@@ -17,32 +17,31 @@ class ProductController extends Controller
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where('nama_produk', 'like', "%{$search}%")
-                ->orWhere('kategori', 'like', "%{$search}%")
+                ->orWhere('kategori', 'like', "%{$search}%") // Pencarian kolom string lama
                 ->orWhere('brand', 'like', "%{$search}%");
         }
 
-        $products = $query->paginate(10)->withQueryString();
+        $products = $query->latest()->paginate(10)->withQueryString();
 
         return view('pages.admin.products.product', compact('products'));
     }
 
-    // Tampilkan form tambah produk
     public function create()
     {
-        return view('pages.admin.products.product-create');
+        $categories = Category::all();
+        return view('pages.admin.products.product-create', compact('categories'));
     }
 
-    // Simpan produk baru
     public function store(Request $request)
     {
         $request->validate([
             'nama_produk' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'kategori' => 'nullable|string|max:100',
-            'stok' => 'nullable|integer',
-            'brand' => 'nullable|string|max:100',
-            'harga' => 'required|numeric',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'category_id' => 'required|exists:categories,id',
+            'harga'       => 'required|numeric',
+            'stok'        => 'nullable|integer',
+            'brand'       => 'nullable|string|max:100',
+            'deskripsi'   => 'nullable|string',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $gambarPath = null;
@@ -50,34 +49,28 @@ class ProductController extends Controller
             $gambarPath = $request->file('gambar')->store('produk', 'public');
         }
 
+        $catName = Category::find($request->category_id)->name ?? null;
+
         Product::create([
             'nama_produk' => $request->nama_produk,
-            'deskripsi' => $request->deskripsi,
-            'kategori' => $request->kategori,
-            'stok' => $request->stok,
-            'brand' => $request->brand,
-            'harga' => $request->harga,
-            'gambar' => $gambarPath,
+            'category_id' => $request->category_id,
+            'kategori'    => $catName, 
+            'stok'        => $request->stok ?? 0,
+            'brand'       => $request->brand,
+            'harga'       => $request->harga,
+            'deskripsi'   => $request->deskripsi,
+            'gambar'      => $gambarPath,
         ]);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
-    }
-
-    // Tampilkan detail produk
-    public function show($id)
-    {
-        $product = Product::findOrFail($id);
-        return view('pages.user.product', compact('product'));
-
-        $product = Product::findOrFail($id);
-        return view('pages.admin.products.detail', compact('product'));
     }
 
     // Tampilkan form edit produk
     public function edit($id)
     {
         $product = Product::findOrFail($id);
-        return view('pages.admin.products.product-edit', compact('product'));
+        $categories = Category::all();
+        return view('pages.admin.products.product-edit', compact('product', 'categories'));
     }
 
     // Update produk
@@ -87,25 +80,34 @@ class ProductController extends Controller
 
         $request->validate([
             'nama_produk' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'harga_rental' => 'required|numeric',
-            'stok' => 'required|integer',
-            'deskripsi' => 'nullable|string',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'category_id' => 'required|exists:categories,id',
+            'harga'       => 'required|numeric',
+            'stok'        => 'required|integer',
+            'brand'       => 'nullable|string',
+            'deskripsi'   => 'nullable|string',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $gambarPath = $product->gambar;
         if ($request->hasFile('gambar')) {
+            // Hapus gambar lama jika ada
+            if ($product->gambar && Storage::disk('public')->exists($product->gambar)) {
+                Storage::disk('public')->delete($product->gambar);
+            }
             $gambarPath = $request->file('gambar')->store('produk', 'public');
         }
 
+        $catName = Category::find($request->category_id)->name ?? null;
+
         $product->update([
             'nama_produk' => $request->nama_produk,
-            'kategori' => $request->kategori,
-            'harga_rental' => $request->harga_rental,
-            'stok' => $request->stok,
-            'deskripsi' => $request->deskripsi,
-            'gambar' => $gambarPath,
+            'category_id' => $request->category_id,
+            'kategori'    => $catName,
+            'harga'       => $request->harga,
+            'stok'        => $request->stok,
+            'brand'       => $request->brand,
+            'deskripsi'   => $request->deskripsi,
+            'gambar'      => $gambarPath,
         ]);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
@@ -115,22 +117,21 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
+        
+        // Hapus gambar dari storage
+        if ($product->gambar && Storage::disk('public')->exists($product->gambar)) {
+            Storage::disk('public')->delete($product->gambar);
+        }
+        
         $product->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
     }
 
-    public function indexByCategory(string $categorySlug)
+    public function show($id)
     {
-        // 1. Ambil data Kategori yang sedang aktif
-        $activeCategory = Category::where('slug', $categorySlug)->firstOrFail();
-
-        // 2. Ambil semua Kategori untuk Sidebar
-        $categories = Category::all();
-
-        // 3. Ambil Produk terkait (12 item per halaman, eager load category)
-        $products = Product::where('category_id', $activeCategory->id)
-            ->with('category')
-            ->paginate(12);
+        $product = Product::findOrFail($id);
+        
+        return view('pages.admin.products.detail', compact('product'));
     }
 }

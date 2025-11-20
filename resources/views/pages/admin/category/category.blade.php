@@ -34,7 +34,7 @@
                             </div>
                             <div class="ml-4">
                                 <h3 class="font-semibold text-gray-700">{{ $category->name }}</h3>
-                                <p class="text-gray-500 text-sm">Jumlah Produk: {{ $category->product_count ?? 0 }}</p>
+                                <p class="text-gray-500 text-sm">Jumlah Produk: {{ $category->products_count }}</p>
                             </div>
                         </a>
                     @empty

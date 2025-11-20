@@ -1,0 +1,271 @@
+@extends('layouts.admin')
+
+@section('content')
+    {{-- 1. LOAD CSS LEAFLET --}}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <div class="flex min-h-screen bg-gray-50">
+        <div class="flex-1 p-6">
+
+            <div class="bg-[#B7E4FF] rounded-2xl shadow-md p-8 mt-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-[#4B4B4B]">Edit Pesanan
+                            #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</h2>
+                        <p class="text-sm text-gray-600">Home > List Pesanan > Edit Pesanan</p>
+                    </div>
+
+                    {{-- Badge Status Saat Ini --}}
+                    <span
+                        class="px-4 py-2 rounded-full font-bold text-sm
+                                {{ $order->status == 'Selesai' ? 'bg-green-100 text-green-700' :
+        ($order->status == 'Batal' ? 'bg-red-100 text-red-700' :
+            ($order->status == 'Perpanjangan' ? 'bg-purple-100 text-purple-700' : 'bg-yellow-100 text-yellow-800')) }}">
+                        {{ $order->status }}
+                    </span>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md p-8 mt-6">
+                    {{-- Form Update --}}
+                    <form action="{{ route('admin.orders.update', $order->id) }}" method="POST"
+                        enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                            {{-- KOLOM KIRI (Detail Pelanggan & Peta) --}}
+                            <div class="space-y-6">
+                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Info Pelanggan & Lokasi</h3>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Nama Pelanggan</label>
+                                    <input type="text" value="{{ $order->nama_pelanggan }}"
+                                        class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                        readonly>
+                                </div>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">No HP / WhatsApp</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" value="{{ $order->no_hp }}"
+                                            class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                            readonly>
+                                        <a href="https://wa.me/{{ $order->no_hp }}" target="_blank"
+                                            class="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 flex items-center gap-1 text-sm font-bold">
+                                            <i class="fab fa-whatsapp"></i> Chat
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Alamat Lengkap</label>
+                                    <textarea rows="2"
+                                        class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                        readonly>{{ $order->alamat }}</textarea>
+                                </div>
+
+                                {{-- PETA LEAFLET (READ ONLY / Static Marker) --}}
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-2">Titik Lokasi
+                                        Pengiriman</label>
+                                    @if($order->latitude && $order->longitude)
+                                        <div id="map" class="w-full h-56 rounded-lg border border-gray-300 z-0"></div>
+                                        <a href="http://googleusercontent.com/maps.google.com/?q={{ $order->latitude }},{{ $order->longitude }}"
+                                            target="_blank" class="text-blue-500 text-xs mt-1 hover:underline inline-block">
+                                            <i class="fas fa-map-marker-alt"></i> Buka di Google Maps
+                                        </a>
+                                    @else
+                                        <div
+                                            class="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm italic border border-dashed border-gray-300">
+                                            Tidak ada data koordinat peta.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+
+                            {{-- KOLOM KANAN (Detail Sewa & Kalkulasi) --}}
+                            <div class="space-y-6">
+                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Detail Sewa & Perpanjangan
+                                </h3>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Produk Disewa</label>
+                                    <input type="text" value="{{ $order->nama_produk }}"
+                                        class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                        readonly>
+
+                                    {{-- Mengambil Harga Harian dari DB untuk Kalkulator --}}
+                                    @php
+                                        $productData = \App\Models\Product::where('nama_produk', $order->nama_produk)->first();
+                                        $hargaPerHari = $productData ? $productData->harga : 0;
+                                    @endphp
+                                    <input type="hidden" id="hargaPerHari" value="{{ $hargaPerHari }}">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block font-semibold text-gray-600 text-sm mb-1">Mulai Sewa</label>
+                                        <input type="date" id="startDate" name="start_date" value="{{ $order->start_date }}"
+                                            class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                            readonly>
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold text-blue-600 text-sm mb-1">Selesai Sewa
+                                            (Edit)</label>
+                                        {{-- Tanggal Selesai BISA DIEDIT --}}
+                                        <input type="date" id="endDate" name="end_date" value="{{ $order->end_date }}"
+                                            class="w-full border-2 border-blue-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 font-semibold text-gray-800 bg-white">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Durasi</label>
+                                    <input type="text" id="durasiText" name="lama_sewa" value="{{ $order->lama_sewa }}"
+                                        class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                        readonly>
+                                </div>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Total Biaya</label>
+                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+
+                                        {{-- 1. Total Sewa Produk (Baru) --}}
+                                        <div class="flex justify-between items-center mb-1 text-sm text-gray-600">
+                                            <span>Total Sewa Produk</span>
+                                            {{-- Hitung manual: Total - Ongkir --}}
+                                            <span>Rp <span
+                                                    id="displayTotalProduk">{{ number_format($order->total - $order->biaya_pengiriman, 0, ',', '.') }}</span></span>
+                                        </div>
+
+                                        {{-- 2. Biaya Kirim --}}
+                                        <div class="flex justify-between items-center mb-2 text-sm text-gray-500">
+                                            <span>Biaya Kirim</span>
+                                            <span>Rp <span
+                                                    id="displayOngkir">{{ number_format($order->biaya_pengiriman, 0, ',', '.') }}</span></span>
+                                        </div>
+                                        <input type="hidden" id="valOngkir" value="{{ $order->biaya_pengiriman }}">
+
+                                        {{-- Garis Pemisah --}}
+                                        <hr class="border-gray-200 my-2">
+
+                                        {{-- 3. Total Utama --}}
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-bold text-gray-700 text-lg">Total</span>
+                                            <span class="font-bold text-pink-600 text-2xl" id="displayTotalText">
+                                                Rp {{ number_format($order->total, 0, ',', '.') }}
+                                            </span>
+                                        </div>
+
+                                        {{-- Input Hidden --}}
+                                        <input type="hidden" id="inputTotal" name="total" value="{{ $order->total }}">
+
+                                        <p class="text-xs text-gray-400 italic mt-2 text-right">*Total otomatis berubah jika
+                                            tanggal sewa diperpanjang.</p>
+                                    </div>
+                                </div>
+
+                                {{-- UPDATE STATUS --}}
+                                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+                                    <label class="block font-bold text-gray-800 mb-2">Update Status Pesanan</label>
+                                    <select name="status" id="statusSelect"
+                                        class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-300 cursor-pointer">
+                                        <option value="Konfirmasi" {{ $order->status == 'Konfirmasi' ? 'selected' : '' }}>
+                                            Konfirmasi (Menunggu)</option>
+                                        <option value="Proses" {{ $order->status == 'Proses' ? 'selected' : '' }}>Proses
+                                            (Sedang Disewa)</option>
+                                        <option value="Perpanjangan" {{ $order->status == 'Perpanjangan' ? 'selected' : '' }}>
+                                            Perpanjangan</option>
+                                        <option value="Selesai" {{ $order->status == 'Selesai' ? 'selected' : '' }}>Selesai
+                                            (Dikembalikan)</option>
+                                        <option value="Batal" {{ $order->status == 'Batal' ? 'selected' : '' }}>Batal</option>
+                                    </select>
+                                </div>
+
+                                {{-- Foto KTP --}}
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Foto KTP</label>
+                                    @if($order->ktp)
+                                        <a href="{{ asset('storage/' . $order->ktp) }}" target="_blank">
+                                            <img src="{{ asset('storage/' . $order->ktp) }}" alt="KTP"
+                                                class="h-24 object-cover rounded-lg border hover:opacity-80 transition">
+                                        </a>
+                                    @else
+                                        <span class="text-sm text-gray-400 italic">Tidak ada foto.</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- TOMBOL AKSI (Bawah) --}}
+                        <div class="mt-8 border-t pt-6 flex justify-end gap-4">
+                            <a href="{{ route('admin.orders.index') }}"
+                                class="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 font-semibold transition">
+                                Kembali
+                            </a>
+                            <button type="submit"
+                                class="px-8 py-2 rounded-lg bg-[#0077B6] text-white hover:bg-[#005A8D] font-bold shadow-md transition transform hover:scale-105">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 2. LOAD JAVASCRIPT --}}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // === A. LOGIKA PETA ===
+            const lat = {{ $order->latitude ?? 0 }};
+            const lng = {{ $order->longitude ?? 0 }};
+
+            if (lat != 0 && lng != 0) {
+                const map = L.map('map').setView([lat, lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+                L.marker([lat, lng]).addTo(map).bindPopup("<b>Lokasi Pengiriman</b><br>{{ $order->alamat }}").openPopup();
+            }
+
+            // === B. LOGIKA HITUNG ULANG (PERPANJANGAN) ===
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            const durasiText = document.getElementById('durasiText');
+            const inputTotal = document.getElementById('inputTotal');
+            const statusSelect = document.getElementById('statusSelect');
+
+            const hargaPerHari = parseInt(document.getElementById('hargaPerHari').value || 0);
+            const ongkir = parseInt(document.getElementById('valOngkir').value || 0);
+            const originalEndDate = endDateEl.value;
+
+            function recalculate() {
+                const start = new Date(startDateEl.value);
+                const end = new Date(endDateEl.value);
+                const diffTime = end - start;
+
+                if (diffTime >= 0) {
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    durasiText.value = diffDays + " Hari";
+                    const totalBaru = (diffDays * hargaPerHari) + ongkir;
+                    inputTotal.value = totalBaru;
+
+                    if (endDateEl.value > originalEndDate) {
+                        statusSelect.value = 'Perpanjangan';
+                    }
+                } else {
+                    alert("Tanggal selesai tidak boleh mundur dari tanggal mulai!");
+                    endDateEl.value = originalEndDate;
+                }
+            }
+
+            endDateEl.addEventListener('change', recalculate);
+        });
+    </script>
+@endsection

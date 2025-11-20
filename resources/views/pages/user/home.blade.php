@@ -3,7 +3,7 @@
 @section('content')
     {{-- Hero Section --}}
     <section class="relative w-full h-screen bg-cover bg-center flex flex-col justify-center items-center text-gray-800"
-        style="background-image: url('{{ asset('images/background.png') }}');">
+        style="background-image: url('{{ asset('images/bg-babystoryy.png') }}');">
         <div class="relative text-center px-4">
         </div>
     </section>

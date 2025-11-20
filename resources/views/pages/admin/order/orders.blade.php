@@ -31,20 +31,35 @@
                         </thead>
                         <tbody class="divide-y">
                             @foreach ($orders as $order)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-2">{{ $order->order_code }}</td>
-                                    <td>{{ $order->customer_name }}</td>
-                                    <td>{{ $order->product_name }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($order->order_date)->format('d M y') }}</td>
-                                    <td>
-                                        <span
-                                            class="px-3 py-1 rounded-full text-sm
-                                    {{ $order->status == 'Selesai' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                            {{ $order->status }}
-                                        </span>
-                                    </td>
-                                    <td>Rp. {{ number_format($order->total, 0, ',', '.') }}</td>
-                                </tr>
+                                                {{-- Tambahkan 'cursor-pointer' dan onclick agar baris bisa diklik --}}
+                                                {{-- Asumsi: Anda ingin klik baris untuk melihat detail atau edit --}}
+                                                <tr class="hover:bg-gray-50 cursor-pointer transition"
+                                                    onclick="window.location='{{ route('admin.orders.edit', $order->id) }}'">
+
+                                                    {{-- ID Pesanan (Gunakan $order->id dan format padding) --}}
+                                                    <td class="py-3 px-4">#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</td>
+
+                                                    {{-- Nama Pelanggan (Sesuaikan dengan DB: nama_pelanggan) --}}
+                                                    <td class="px-4">{{ $order->nama_pelanggan }}</td>
+
+                                                    {{-- Nama Produk (Sesuaikan dengan DB: nama_produk) --}}
+                                                    <td class="px-4">{{ $order->nama_produk }}</td>
+
+                                                    {{-- Tanggal (Gunakan created_at) --}}
+                                                    <td class="px-4">{{ \Carbon\Carbon::parse($order->created_at)->format('d M y') }}</td>
+
+                                                    {{-- Status --}}
+                                                    <td class="px-4">
+                                                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                            {{ $order->status == 'Selesai' ? 'bg-green-100 text-green-700' :
+                                ($order->status == 'Batal' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700') }}">
+                                                            {{ $order->status }}
+                                                        </span>
+                                                    </td>
+
+                                                    {{-- Total --}}
+                                                    <td class="px-4 font-medium">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
+                                                </tr>
                             @endforeach
                         </tbody>
                     </table>
