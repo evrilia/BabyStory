@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
-    {{-- Leaflet Geocoder CSS (PENTING UNTUK SEARCH MAPS) --}}
+    {{-- Leaflet Geocoder CSS (UNTUK SEARCH MAPS) --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
     {{-- Select2 CSS --}}
@@ -29,12 +29,16 @@
             height: 40px !important;
         }
 
-        /* Pastikan Peta punya tinggi */
+        /* Pastikan Peta punya tinggi & index yang benar */
         #map {
             height: 350px;
-            /* Saya perbesar sedikit */
             width: 100%;
             z-index: 1;
+        }
+
+        /* Agar hasil search geocoder tampil di atas peta */
+        .leaflet-control-geocoder-form input {
+            color: black;
         }
     </style>
 
@@ -190,7 +194,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    {{-- Leaflet Geocoder JS (PENTING! KEMARIN INI MUNGKIN HILANG) --}}
+    {{-- Leaflet Geocoder JS (INI YANG MEMBUAT TOMBOL SEARCH MUNCUL) --}}
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script>
@@ -213,7 +217,6 @@
             let currentOngkir = 0;
 
             // === SETUP GEOCODER (PENCARIAN PETA) ===
-            // Ini akan memunculkan tombol search di pojok kanan atas peta
             const geocoder = L.Control.geocoder({
                 defaultMarkGeocode: false,
                 placeholder: "Cari lokasi...",
@@ -250,7 +253,7 @@
                 if (jarakKm <= 5) currentOngkir = 0;
                 else {
                     const sisaJarak = jarakKm - 5;
-                    currentOngkir = Math.ceil(sisaJarak / 5) * 15000;
+                    currentOngkir = Math.ceil(sisaJarak / 5) * 5000;
                 }
 
                 destinationMarker.bindPopup(`<b>Lokasi Terpilih</b><br>Jarak: ${jarakKm.toFixed(1)} km<br>Ongkir: Rp ${currentOngkir.toLocaleString('id-ID')}`).openPopup();
@@ -277,7 +280,6 @@
                 const alamatText = document.getElementById('alamatInput').value;
                 if (!alamatText) return alert("Isi alamat dulu!");
 
-                // Tambahkan konteks pencarian agar lebih akurat
                 const query = alamatText + ", Jawa Tengah, Indonesia";
 
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)

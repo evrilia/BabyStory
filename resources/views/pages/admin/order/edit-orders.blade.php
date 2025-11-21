@@ -16,18 +16,20 @@
                         <p class="text-sm text-gray-600">Home > List Pesanan > Edit Pesanan</p>
                     </div>
 
-                    {{-- Badge Status Saat Ini --}}
-                    <span
-                        class="px-4 py-2 rounded-full font-bold text-sm
-                                {{ $order->status == 'Selesai' ? 'bg-green-100 text-green-700' :
-        ($order->status == 'Batal' ? 'bg-red-100 text-red-700' :
-            ($order->status == 'Perpanjangan' ? 'bg-purple-100 text-purple-700' : 'bg-yellow-100 text-yellow-800')) }}">
+                    {{-- Badge Status --}}
+                    <span class="px-4 py-2 rounded-full font-bold text-sm
+                            {{ $order->status == 'Selesai'
+        ? 'bg-green-100 text-green-700'
+        : ($order->status == 'Batal'
+            ? 'bg-red-100 text-red-700'
+            : ($order->status == 'Perpanjangan'
+                ? 'bg-purple-100 text-purple-700'
+                : 'bg-yellow-100 text-yellow-800')) }}">
                         {{ $order->status }}
                     </span>
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-md p-8 mt-6">
-                    {{-- Form Update --}}
                     <form action="{{ route('admin.orders.update', $order->id) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
@@ -35,9 +37,11 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                            {{-- KOLOM KIRI (Detail Pelanggan & Peta) --}}
+                            {{-- ========================== --}}
+                            {{-- KOLOM KIRI (INFO & PETA) --}}
+                            {{-- ========================== --}}
                             <div class="space-y-6">
-                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Info Pelanggan & Lokasi</h3>
+                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Info Pelanggan</h3>
 
                                 <div>
                                     <label class="block font-semibold text-gray-600 text-sm mb-1">Nama Pelanggan</label>
@@ -46,15 +50,19 @@
                                         readonly>
                                 </div>
 
+                                {{-- PERBAIKAN TOMBOL WHATSAPP --}}
                                 <div>
                                     <label class="block font-semibold text-gray-600 text-sm mb-1">No HP / WhatsApp</label>
-                                    <div class="flex gap-2">
+                                    <div class="flex gap-2 items-stretch">
                                         <input type="text" value="{{ $order->no_hp }}"
                                             class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
                                             readonly>
+
                                         <a href="https://wa.me/{{ $order->no_hp }}" target="_blank"
-                                            class="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 flex items-center gap-1 text-sm font-bold">
-                                            <i class="fab fa-whatsapp"></i> Chat
+                                            class="bg-green-500 hover:bg-green-600 text-white px-4 rounded-lg flex items-center justify-center gap-2 transition duration-200 shadow-sm min-w-[100px]"
+                                            title="Chat via WhatsApp">
+                                            <i class="fab fa-whatsapp text-lg"></i>
+                                            <span class="font-bold text-sm">Chat</span>
                                         </a>
                                     </div>
                                 </div>
@@ -66,12 +74,11 @@
                                         readonly>{{ $order->alamat }}</textarea>
                                 </div>
 
-                                {{-- PETA LEAFLET (READ ONLY / Static Marker) --}}
                                 <div>
-                                    <label class="block font-semibold text-gray-600 text-sm mb-2">Titik Lokasi
-                                        Pengiriman</label>
-                                    @if($order->latitude && $order->longitude)
-                                        <div id="map" class="w-full h-56 rounded-lg border border-gray-300 z-0"></div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-2">Lokasi Peta</label>
+                                    @if ($order->latitude && $order->longitude)
+                                        <div id="map" class="w-full h-56 rounded-lg border border-gray-300 z-0">
+                                        </div>
                                         <a href="http://googleusercontent.com/maps.google.com/?q={{ $order->latitude }},{{ $order->longitude }}"
                                             target="_blank" class="text-blue-500 text-xs mt-1 hover:underline inline-block">
                                             <i class="fas fa-map-marker-alt"></i> Buka di Google Maps
@@ -86,18 +93,19 @@
                             </div>
 
 
-                            {{-- KOLOM KANAN (Detail Sewa & Kalkulasi) --}}
+                            {{-- ========================== --}}
+                            {{-- KOLOM KANAN (SEWA & BIAYA) --}}
+                            {{-- ========================== --}}
                             <div class="space-y-6">
-                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Detail Sewa & Perpanjangan
-                                </h3>
+                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Detail Sewa & Tagihan</h3>
 
+                                {{-- Produk & Harga Harian (Hidden) --}}
                                 <div>
                                     <label class="block font-semibold text-gray-600 text-sm mb-1">Produk Disewa</label>
                                     <input type="text" value="{{ $order->nama_produk }}"
                                         class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
                                         readonly>
 
-                                    {{-- Mengambil Harga Harian dari DB untuk Kalkulator --}}
                                     @php
                                         $productData = \App\Models\Product::where('nama_produk', $order->nama_produk)->first();
                                         $hargaPerHari = $productData ? $productData->harga : 0;
@@ -105,18 +113,20 @@
                                     <input type="hidden" id="hargaPerHari" value="{{ $hargaPerHari }}">
                                 </div>
 
+                                {{-- Tanggal Sewa --}}
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block font-semibold text-gray-600 text-sm mb-1">Mulai Sewa</label>
-                                        <input type="date" id="startDate" name="start_date" value="{{ $order->start_date }}"
+                                        <input type="date" id="startDate" name="start_date"
+                                            value="{{ \Carbon\Carbon::parse($order->start_date)->format('Y-m-d') }}"
                                             class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
                                             readonly>
                                     </div>
                                     <div>
                                         <label class="block font-bold text-blue-600 text-sm mb-1">Selesai Sewa
                                             (Edit)</label>
-                                        {{-- Tanggal Selesai BISA DIEDIT --}}
-                                        <input type="date" id="endDate" name="end_date" value="{{ $order->end_date }}"
+                                        <input type="date" id="endDate" name="end_date"
+                                            value="{{ \Carbon\Carbon::parse($order->end_date)->format('Y-m-d') }}"
                                             class="w-full border-2 border-blue-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 font-semibold text-gray-800 bg-white">
                                     </div>
                                 </div>
@@ -128,58 +138,73 @@
                                         readonly>
                                 </div>
 
+                                {{-- RINCIAN BIAYA LENGKAP --}}
                                 <div>
-                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Total Biaya</label>
-                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Rincian Biaya</label>
+                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm space-y-2">
 
-                                        {{-- 1. Total Sewa Produk (Baru) --}}
-                                        <div class="flex justify-between items-center mb-1 text-sm text-gray-600">
+                                        {{-- 1. Total Sewa Produk (Hitung Manual PHP Awal) --}}
+                                        <div class="flex justify-between text-gray-600">
                                             <span>Total Sewa Produk</span>
-                                            {{-- Hitung manual: Total - Ongkir --}}
                                             <span>Rp <span
                                                     id="displayTotalProduk">{{ number_format($order->total - $order->biaya_pengiriman, 0, ',', '.') }}</span></span>
                                         </div>
 
-                                        {{-- 2. Biaya Kirim --}}
-                                        <div class="flex justify-between items-center mb-2 text-sm text-gray-500">
+                                        {{-- 2. Biaya Kirim (Tetap) --}}
+                                        <div class="flex justify-between text-gray-600">
                                             <span>Biaya Kirim</span>
                                             <span>Rp <span
                                                     id="displayOngkir">{{ number_format($order->biaya_pengiriman, 0, ',', '.') }}</span></span>
                                         </div>
                                         <input type="hidden" id="valOngkir" value="{{ $order->biaya_pengiriman }}">
 
-                                        {{-- Garis Pemisah --}}
-                                        <hr class="border-gray-200 my-2">
+                                        <hr class="border-gray-300 my-1">
 
-                                        {{-- 3. Total Utama --}}
-                                        <div class="flex justify-between items-center">
-                                            <span class="font-bold text-gray-700 text-lg">Total</span>
-                                            <span class="font-bold text-pink-600 text-2xl" id="displayTotalText">
-                                                Rp {{ number_format($order->total, 0, ',', '.') }}
-                                            </span>
+                                        {{-- 3. Total Baru --}}
+                                        <div class="flex justify-between text-gray-800 font-semibold">
+                                            <span>Total Baru</span>
+                                            <span>Rp <span
+                                                    id="displayTotalBaru">{{ number_format($order->total, 0, ',', '.') }}</span></span>
                                         </div>
 
-                                        {{-- Input Hidden --}}
+                                        {{-- 4. Sudah Dibayar --}}
+                                        <div class="flex justify-between text-green-600">
+                                            <span>Sudah Dibayar</span>
+                                            <span>- Rp {{ number_format($order->total, 0, ',', '.') }}</span>
+                                        </div>
+                                        {{-- Simpan nilai asli dari DB (tanpa format) --}}
+                                        <input type="hidden" id="totalSudahDibayar" value="{{ $order->total }}">
+
+                                        <hr class="border-gray-300 my-1">
+
+                                        {{-- 5. Tagihan Tambahan --}}
+                                        <div class="flex justify-between items-center pt-1">
+                                            <span class="font-bold text-gray-800 text-lg">Tagihan Tambahan</span>
+                                            <span class="font-bold text-pink-600 text-2xl" id="displayTagihanTambahan">Rp
+                                                0</span>
+                                        </div>
+
+                                        {{-- Input Hidden Total (Wajib untuk update DB) --}}
                                         <input type="hidden" id="inputTotal" name="total" value="{{ $order->total }}">
 
-                                        <p class="text-xs text-gray-400 italic mt-2 text-right">*Total otomatis berubah jika
-                                            tanggal sewa diperpanjang.</p>
+                                        <p class="text-xs text-gray-400 italic mt-2 text-right">*Tagihan muncul otomatis
+                                            jika durasi ditambah.</p>
                                     </div>
                                 </div>
 
-                                {{-- UPDATE STATUS --}}
+                                {{-- Update Status --}}
                                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
                                     <label class="block font-bold text-gray-800 mb-2">Update Status Pesanan</label>
                                     <select name="status" id="statusSelect"
                                         class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-300 cursor-pointer">
                                         <option value="Konfirmasi" {{ $order->status == 'Konfirmasi' ? 'selected' : '' }}>
-                                            Konfirmasi (Menunggu)</option>
+                                            Konfirmasi</option>
                                         <option value="Proses" {{ $order->status == 'Proses' ? 'selected' : '' }}>Proses
-                                            (Sedang Disewa)</option>
+                                        </option>
                                         <option value="Perpanjangan" {{ $order->status == 'Perpanjangan' ? 'selected' : '' }}>
                                             Perpanjangan</option>
                                         <option value="Selesai" {{ $order->status == 'Selesai' ? 'selected' : '' }}>Selesai
-                                            (Dikembalikan)</option>
+                                        </option>
                                         <option value="Batal" {{ $order->status == 'Batal' ? 'selected' : '' }}>Batal</option>
                                     </select>
                                 </div>
@@ -187,7 +212,7 @@
                                 {{-- Foto KTP --}}
                                 <div>
                                     <label class="block font-semibold text-gray-600 text-sm mb-1">Foto KTP</label>
-                                    @if($order->ktp)
+                                    @if ($order->ktp)
                                         <a href="{{ asset('storage/' . $order->ktp) }}" target="_blank">
                                             <img src="{{ asset('storage/' . $order->ktp) }}" alt="KTP"
                                                 class="h-24 object-cover rounded-lg border hover:opacity-80 transition">
@@ -199,7 +224,7 @@
                             </div>
                         </div>
 
-                        {{-- TOMBOL AKSI (Bawah) --}}
+                        {{-- Tombol Aksi --}}
                         <div class="mt-8 border-t pt-6 flex justify-end gap-4">
                             <a href="{{ route('admin.orders.index') }}"
                                 class="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 font-semibold transition">
@@ -224,7 +249,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            // === A. LOGIKA PETA ===
+            // === A. PETA ===
             const lat = {{ $order->latitude ?? 0 }};
             const lng = {{ $order->longitude ?? 0 }};
 
@@ -241,21 +266,52 @@
             const inputTotal = document.getElementById('inputTotal');
             const statusSelect = document.getElementById('statusSelect');
 
+            // Elemen Tampilan Angka
+            const displayTotalProduk = document.getElementById('displayTotalProduk');
+            const displayTotalBaru = document.getElementById('displayTotalBaru');
+            const displayTagihanTambahan = document.getElementById('displayTagihanTambahan');
+
+            // Data Awal (Parse Int agar terbaca sebagai angka, bukan string)
             const hargaPerHari = parseInt(document.getElementById('hargaPerHari').value || 0);
             const ongkir = parseInt(document.getElementById('valOngkir').value || 0);
+            const totalSudahDibayar = parseInt(document.getElementById('totalSudahDibayar').value || 0);
             const originalEndDate = endDateEl.value;
 
+            // Helper Format Rupiah
+            const formatIDR = (num) => num.toLocaleString('id-ID');
+
             function recalculate() {
+                // Validasi agar tidak error jika input kosong
+                if (!startDateEl.value || !endDateEl.value) return;
+
                 const start = new Date(startDateEl.value);
                 const end = new Date(endDateEl.value);
                 const diffTime = end - start;
 
                 if (diffTime >= 0) {
+                    // 1. Hitung Durasi Baru
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
                     durasiText.value = diffDays + " Hari";
-                    const totalBaru = (diffDays * hargaPerHari) + ongkir;
+
+                    // 2. Hitung Biaya Sewa Produk Saja (Hari x Harga)
+                    const totalProdukOnly = diffDays * hargaPerHari;
+
+                    // 3. Hitung Total Baru (Sewa + Ongkir)
+                    const totalBaru = totalProdukOnly + ongkir;
+
+                    // 4. Hitung Tagihan Tambahan (Selisih)
+                    let tagihanTambahan = totalBaru - totalSudahDibayar;
+                    if (tagihanTambahan < 0) tagihanTambahan = 0;
+
+                    // 5. Update Tampilan (Gunakan formatIDR)
+                    if (displayTotalProduk) displayTotalProduk.innerText = formatIDR(totalProdukOnly);
+                    if (displayTotalBaru) displayTotalBaru.innerText = formatIDR(totalBaru);
+                    if (displayTagihanTambahan) displayTagihanTambahan.innerText = 'Rp ' + formatIDR(tagihanTambahan);
+
+                    // 6. Update Input Database (Nilai asli tanpa titik)
                     inputTotal.value = totalBaru;
 
+                    // 7. Auto Status Change
                     if (endDateEl.value > originalEndDate) {
                         statusSelect.value = 'Perpanjangan';
                     }

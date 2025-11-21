@@ -42,7 +42,7 @@ class AdminOrderController extends Controller
             'end_date'         => 'required|date|after_or_equal:start_date',
             'biaya_pengiriman' => 'required|numeric',
             'total'            => 'required|numeric',
-            'ktp'              => 'nullable|image|max:2048',
+            'ktp'              => 'nullable|image|max:5102',
             'latitude'         => 'nullable|string',
             'longitude'        => 'nullable|string',
         ]);
