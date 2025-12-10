@@ -41,7 +41,7 @@ class ProductController extends Controller
             'stok'        => 'nullable|integer',
             'brand'       => 'nullable|string|max:100',
             'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:5102ph',
         ]);
 
         $gambarPath = null;
@@ -85,7 +85,7 @@ class ProductController extends Controller
             'stok'        => 'required|integer',
             'brand'       => 'nullable|string',
             'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:5102',
         ]);
 
         $gambarPath = $product->gambar;

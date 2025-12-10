@@ -19,6 +19,10 @@ class StatisticController extends Controller
         $labels = [];
         $values = [];
 
+        // DAFTAR STATUS YANG DIANGGAP SEBAGAI PENDAPATAN
+        // Menambahkan 'Konfirmasi' agar pesanan baru langsung terhitung
+        $revenueStatuses = ['Konfirmasi', 'Proses', 'Perpanjangan', 'Selesai'];
+
         // ==========================================
         // LOGIKA 1: MODE TAHUNAN
         // ==========================================
@@ -30,7 +34,7 @@ class StatisticController extends Controller
 
                 // Hitung Data
                 $orders = Order::whereYear('created_at', $year)
-                    ->whereIn('status', ['Selesai', 'Proses', 'Perpanjangan']);
+                    ->whereIn('status', $revenueStatuses); // MENGGUNAKAN ARRAY BARU
 
                 $totalPendapatan = $orders->sum('total');
                 $jumlahTransaksi = $orders->count();
@@ -38,7 +42,7 @@ class StatisticController extends Controller
                 // Produk Terlaris
                 $bestSelling = Order::select('nama_produk', DB::raw('count(*) as total'))
                     ->whereYear('created_at', $year)
-                    ->whereIn('status', ['Selesai', 'Proses', 'Perpanjangan'])
+                    ->whereIn('status', $revenueStatuses) // MENGGUNAKAN ARRAY BARU
                     ->groupBy('nama_produk')
                     ->orderByDesc('total')
                     ->first();
@@ -69,7 +73,7 @@ class StatisticController extends Controller
                 // Hitung Data
                 $orders = Order::whereYear('created_at', $currentYear)
                     ->whereMonth('created_at', $i)
-                    ->whereIn('status', ['Selesai', 'Proses', 'Perpanjangan']);
+                    ->whereIn('status', $revenueStatuses); // MENGGUNAKAN ARRAY BARU
 
                 $totalPendapatan = $orders->sum('total');
                 $jumlahTransaksi = $orders->count();
@@ -78,7 +82,7 @@ class StatisticController extends Controller
                 $bestSelling = Order::select('nama_produk', DB::raw('count(*) as total'))
                     ->whereYear('created_at', $currentYear)
                     ->whereMonth('created_at', $i)
-                    ->whereIn('status', ['Selesai', 'Proses', 'Perpanjangan'])
+                    ->whereIn('status', $revenueStatuses) // MENGGUNAKAN ARRAY BARU
                     ->groupBy('nama_produk')
                     ->orderByDesc('total')
                     ->first();

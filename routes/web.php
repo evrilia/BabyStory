@@ -101,5 +101,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [NotificationController::class, 'index'])->name('index');
             Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('read');
         });
+
+        // ===================
+        // SETTINGS
+        // ===================
+        Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
     });
 });

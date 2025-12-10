@@ -58,5 +58,16 @@
                 Statistik
             </a>
         </li>
+
+        {{-- Pengaturan Notifikasi --}}
+        <li>
+            <a href="{{ route('admin.settings.index') }}"
+                class="block py-2.5 mx-4 rounded-full transition duration-200
+                {{ request()->routeIs('admin.settings.*')
+                    ? 'bg-pink-400 text-white shadow-md'
+                    : 'text-gray-700 hover:bg-pink-100 hover:text-pink-500' }}">
+                Pengaturan Notifikasi
+            </a>
+        </li>
     </ul>
 </div>

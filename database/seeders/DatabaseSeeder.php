@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         // 2. Buat Akun Admin
         Admin::create([
             'username' => 'admin',
-            'password' => Hash::make('123456'), // Kita SET ke 123456 biar gampang
+            'password' => Hash::make('123456'),
         ]);
     }
 }

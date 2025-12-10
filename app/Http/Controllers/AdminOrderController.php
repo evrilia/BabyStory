@@ -34,6 +34,7 @@ class AdminOrderController extends Controller
         // 2. Validasi Input
         $validated = $request->validate([    
             'nama_pelanggan'   => 'required|string|max:255',
+            'email'            => 'required|email|max:255',
             'no_hp'            => 'required|numeric',
             'alamat'           => 'required|string',
             'kota_tujuan'      => 'required|string',
@@ -61,6 +62,7 @@ class AdminOrderController extends Controller
 
         $order = Order::create([
             'nama_pelanggan'   => $validated['nama_pelanggan'],
+            'email'            => $validated['email'],
             'no_hp'            => $validated['no_hp'],
             'alamat'           => $validated['alamat'],
             'kota_tujuan'      => $validated['kota_tujuan'],

@@ -69,6 +69,12 @@
                                 </div>
 
                                 <div>
+                                    <label class="block font-semibold text-gray-700 mb-2">Email</label>
+                                    <input type="email" name="email" required
+                                        class="w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-300">
+                                </div>
+
+                                <div>
                                     <label class="block font-semibold text-gray-700 mb-2">No HP</label>
                                     <input type="text" name="no_hp" pattern="[0-9]+" required
                                         class="w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-300">
