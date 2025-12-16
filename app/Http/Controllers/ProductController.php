@@ -41,7 +41,7 @@ class ProductController extends Controller
             'stok'        => 'nullable|integer',
             'brand'       => 'nullable|string|max:100',
             'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:5102ph',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:5102',
         ]);
 
         $gambarPath = null;

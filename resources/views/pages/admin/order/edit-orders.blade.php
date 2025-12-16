@@ -18,7 +18,7 @@
 
                     {{-- Badge Status --}}
                     <span class="px-4 py-2 rounded-full font-bold text-sm
-                            {{ $order->status == 'Selesai'
+                                {{ $order->status == 'Selesai'
         ? 'bg-green-100 text-green-700'
         : ($order->status == 'Batal'
             ? 'bg-red-100 text-red-700'
@@ -50,22 +50,22 @@
                                         readonly>
                                 </div>
 
-                                {{-- PERBAIKAN TOMBOL WHATSAPP --}}
+                                {{-- START PERBAIKAN: Tambah Email & Hapus Tombol Chat --}}
                                 <div>
-                                    <label class="block font-semibold text-gray-600 text-sm mb-1">No HP / WhatsApp</label>
-                                    <div class="flex gap-2 items-stretch">
-                                        <input type="text" value="{{ $order->no_hp }}"
-                                            class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
-                                            readonly>
-
-                                        <a href="https://wa.me/{{ $order->no_hp }}" target="_blank"
-                                            class="bg-green-500 hover:bg-green-600 text-white px-4 rounded-lg flex items-center justify-center gap-2 transition duration-200 shadow-sm min-w-[100px]"
-                                            title="Chat via WhatsApp">
-                                            <i class="fab fa-whatsapp text-lg"></i>
-                                            <span class="font-bold text-sm">Chat</span>
-                                        </a>
-                                    </div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">Email</label>
+                                    <input type="email" name="email" value="{{ $order->email ?? '' }}"
+                                        class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                        readonly>
                                 </div>
+
+                                <div>
+                                    <label class="block font-semibold text-gray-600 text-sm mb-1">No HP</label>
+                                    <input type="text" value="{{ $order->no_hp }}"
+                                        class="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+                                        readonly>
+                                    {{-- Tombol Chat dihilangkan --}}
+                                </div>
+                                {{-- END PERBAIKAN --}}
 
                                 <div>
                                     <label class="block font-semibold text-gray-600 text-sm mb-1">Alamat Lengkap</label>
@@ -284,44 +284,46 @@
                 // Validasi agar tidak error jika input kosong
                 if (!startDateEl.value || !endDateEl.value) return;
 
+                // Mengatasi masalah perhitungan hari (seperti yang didiskusikan sebelumnya)
                 const start = new Date(startDateEl.value);
                 const end = new Date(endDateEl.value);
-                const diffTime = end - start;
+
+                // Normalisasi waktu ke tengah malam (00:00:00)
+                start.setHours(0, 0, 0, 0);
+                end.setHours(0, 0, 0, 0);
+
+                const diffTime = end.getTime() - start.getTime();
 
                 if (diffTime >= 0) {
-                    // 1. Hitung Durasi Baru
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
                     durasiText.value = diffDays + " Hari";
 
-                    // 2. Hitung Biaya Sewa Produk Saja (Hari x Harga)
                     const totalProdukOnly = diffDays * hargaPerHari;
 
-                    // 3. Hitung Total Baru (Sewa + Ongkir)
                     const totalBaru = totalProdukOnly + ongkir;
 
-                    // 4. Hitung Tagihan Tambahan (Selisih)
                     let tagihanTambahan = totalBaru - totalSudahDibayar;
-                    if (tagihanTambahan < 0) tagihanTambahan = 0;
+                    if (tagihanTambahan < 0) tagihanTambahan = 0; // Pastikan tagihan tidak negatif
 
-                    // 5. Update Tampilan (Gunakan formatIDR)
                     if (displayTotalProduk) displayTotalProduk.innerText = formatIDR(totalProdukOnly);
                     if (displayTotalBaru) displayTotalBaru.innerText = formatIDR(totalBaru);
                     if (displayTagihanTambahan) displayTagihanTambahan.innerText = 'Rp ' + formatIDR(tagihanTambahan);
 
-                    // 6. Update Input Database (Nilai asli tanpa titik)
                     inputTotal.value = totalBaru;
 
-                    // 7. Auto Status Change
                     if (endDateEl.value > originalEndDate) {
                         statusSelect.value = 'Perpanjangan';
                     }
                 } else {
                     alert("Tanggal selesai tidak boleh mundur dari tanggal mulai!");
                     endDateEl.value = originalEndDate;
+                    recalculate();
                 }
             }
 
             endDateEl.addEventListener('change', recalculate);
+
+            recalculate();
         });
     </script>
 @endsection
