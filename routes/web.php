@@ -77,15 +77,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // PRODUCTS
         // ===================
         Route::prefix('products')->name('products.')->group(function () {
-            // 1. Rute Statis (Harus di atas ID)
             Route::get('/', [ProductController::class, 'index'])->name('index');
             Route::get('/create', [ProductController::class, 'create'])->name('create');
             Route::post('/', [ProductController::class, 'store'])->name('store');
 
-            // 2. Rute Dinamis (Mengandung ID)
+            // PERBAIKAN: Letakkan EDIT di atas agar URL /{id}/edit tidak terdeteksi sebagai /{id}
             Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
             Route::put('/{id}', [ProductController::class, 'update'])->name('update');
             Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
+
+            // Show/Detail tetap ada tapi tidak digunakan sebagai link utama
             Route::get('/{id}', [ProductController::class, 'show'])->name('show');
         });
 

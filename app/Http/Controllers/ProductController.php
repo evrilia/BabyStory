@@ -37,11 +37,11 @@ class ProductController extends Controller
         $request->validate([
             'nama_produk' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'harga'       => 'required|numeric',
-            'stok'        => 'nullable|integer',
-            'brand'       => 'nullable|string|max:100',
-            'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:5102',
+            'harga' => 'required|numeric',
+            'stok' => 'nullable|integer',
+            'brand' => 'nullable|string|max:100',
+            'deskripsi' => 'nullable|string',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:5102',
         ]);
 
         $gambarPath = null;
@@ -54,12 +54,12 @@ class ProductController extends Controller
         Product::create([
             'nama_produk' => $request->nama_produk,
             'category_id' => $request->category_id,
-            'kategori'    => $catName, 
-            'stok'        => $request->stok ?? 0,
-            'brand'       => $request->brand,
-            'harga'       => $request->harga,
-            'deskripsi'   => $request->deskripsi,
-            'gambar'      => $gambarPath,
+            'kategori' => $catName,
+            'stok' => $request->stok ?? 0,
+            'brand' => $request->brand,
+            'harga' => $request->harga,
+            'deskripsi' => $request->deskripsi,
+            'gambar' => $gambarPath,
         ]);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
@@ -81,34 +81,22 @@ class ProductController extends Controller
         $request->validate([
             'nama_produk' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'harga'       => 'required|numeric',
-            'stok'        => 'required|integer',
-            'brand'       => 'nullable|string',
-            'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg|max:5102',
+            'harga' => 'required|numeric',
+            'stok' => 'required|integer',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $gambarPath = $product->gambar;
+        $data = $request->only(['nama_produk', 'category_id', 'harga', 'stok', 'brand', 'deskripsi']);
+
         if ($request->hasFile('gambar')) {
-            // Hapus gambar lama jika ada
+            // Hapus gambar lama
             if ($product->gambar && Storage::disk('public')->exists($product->gambar)) {
                 Storage::disk('public')->delete($product->gambar);
             }
-            $gambarPath = $request->file('gambar')->store('produk', 'public');
+            $data['gambar'] = $request->file('gambar')->store('produk', 'public');
         }
 
-        $catName = Category::find($request->category_id)->name ?? null;
-
-        $product->update([
-            'nama_produk' => $request->nama_produk,
-            'category_id' => $request->category_id,
-            'kategori'    => $catName,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok,
-            'brand'       => $request->brand,
-            'deskripsi'   => $request->deskripsi,
-            'gambar'      => $gambarPath,
-        ]);
+        $product->update($data);
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
     }
@@ -117,12 +105,12 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        
+
         // Hapus gambar dari storage
         if ($product->gambar && Storage::disk('public')->exists($product->gambar)) {
             Storage::disk('public')->delete($product->gambar);
         }
-        
+
         $product->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
@@ -131,7 +119,7 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::findOrFail($id);
-        
+
         return view('pages.admin.products.detail', compact('product'));
     }
 }

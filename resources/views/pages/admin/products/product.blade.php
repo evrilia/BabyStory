@@ -21,21 +21,18 @@
                 <!-- Grid Produk -->
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @forelse ($products as $product)
-                        <a href="{{ route('admin.products.show', $product->id) }}">
-                            <div class="bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition">
-                                <!-- Gambar Produk -->
+                        <a href="{{ route('admin.products.edit', $product->id) }}">
+                            <div class="bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition cursor-pointer">
                                 <div
                                     class="w-full h-48 bg-pink-200 rounded-lg flex items-center justify-center overflow-hidden mb-3">
                                     @if ($product->gambar)
-                                        <img src="{{ asset('storage/' . $product->gambar) }}"
-                                            alt="{{ $product->nama_produk }}" class="object-contain w-full h-full">
+                                        <img src="{{ asset('storage/' . $product->gambar) }}" alt="{{ $product->nama_produk }}"
+                                            class="object-contain w-full h-full">
                                     @else
                                         <img src="{{ asset('images/ph_image-light.png') }}" alt="Placeholder"
                                             class="w-20 opacity-70">
                                     @endif
                                 </div>
-
-                                <!-- Nama & Kategori Produk -->
                                 <h3 class="font-semibold text-gray-700 text-sm mb-1">
                                     {{ $product->kategori ?? 'Tanpa Kategori' }} - {{ $product->nama_produk }}
                                 </h3>
