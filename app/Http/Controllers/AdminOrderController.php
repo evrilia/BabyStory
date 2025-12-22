@@ -33,7 +33,6 @@ class AdminOrderController extends Controller
             return back()->withErrors(['msg' => 'Stok produk habis atau tidak ditemukan!']);
         }
 
-        // 2. Validasi Input
         $validated = $request->validate([
             'nama_pelanggan' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -46,20 +45,13 @@ class AdminOrderController extends Controller
             'biaya_pengiriman' => 'required|numeric',
             'total' => 'required|numeric',
             'ktp' => 'nullable|image|max:5102',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
         ]);
 
         $start = Carbon::parse($request->start_date);
         $end = Carbon::parse($request->end_date);
-        $diffDays = $start->diffInDays($end) + 1;
-        $lamaSewaString = $diffDays . ' Hari';
+        $lamaSewaString = ($start->diffInDays($end) + 1) . ' Hari';
 
-        $ktpPath = null;
-        if ($request->hasFile('ktp')) {
-            $ktpPath = $request->file('ktp')->store('ktp', 'public');
-        }
-
+        $ktpPath = $request->hasFile('ktp') ? $request->file('ktp')->store('ktp', 'public') : null;
         $subtotal = $request->total - $request->biaya_pengiriman;
 
         $order = Order::create([
@@ -77,11 +69,9 @@ class AdminOrderController extends Controller
             'subtotal' => $subtotal,
             'total' => $validated['total'],
             'status' => 'Konfirmasi',
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
         ]);
 
-        // TRIGGER EMAIL
+        // TRIGGER EMAIL KONFIRMASI
         try {
             $subject = "Konfirmasi Pesanan - Baby Story";
             $content = "Halo {$order->nama_pelanggan},\n\n" .
@@ -91,30 +81,22 @@ class AdminOrderController extends Controller
 
             Mail::to($order->email)->send(new RentalReminder($subject, $content));
         } catch (\Exception $e) {
-            // Catat error jika pengiriman email gagal agar aplikasi tidak berhenti
-            \Log::error("Gagal kirim email: " . $e->getMessage());
+            \Log::error("Gagal kirim email konfirmasi: " . $e->getMessage());
         }
 
         $product->decrement('stok');
 
-        return redirect()->route('admin.orders.index')->with('success', 'Pesanan berhasil ditambahkan & Stok berkurang!');
-    }
-
-    public function edit($id)
-    {
-        $order = Order::findOrFail($id);
-        return view('pages.admin.order.edit-orders', compact('order'));
+        return redirect()->route('admin.orders.index')->with('success', 'Pesanan berhasil ditambahkan!');
     }
 
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
-
         $statusLama = $order->status;
 
         $request->validate([
             'status' => 'required',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date',
             'total' => 'required|numeric',
             'lama_sewa' => 'required|string',
         ]);
@@ -126,29 +108,28 @@ class AdminOrderController extends Controller
             'total' => $request->total,
         ]);
 
-        // TRIGGER EMAIL JIKA SELESAI
+        // TRIGGER EMAIL JIKA SELESAI (Gunakan RentalReminder agar konsisten)
         if ($request->status == 'Selesai' && $statusLama != 'Selesai') {
             try {
-                Mail::send('reminder', ['content' => "Pesanan Anda #{$order->id} telah selesai. Terima kasih telah menyewa di Baby Story!"], function ($message) use ($order) {
-                    $message->to($order->email)
-                        ->subject('Pesanan Selesai - Baby Story');
-                });
+                $subject = "Pesanan Selesai - Baby Story";
+                $content = "Halo {$order->nama_pelanggan},\n\n" .
+                    "Pesanan Anda #{$order->id} telah selesai. Terima kasih telah menyewa di Baby Story!";
+
+                Mail::to($order->email)->send(new RentalReminder($subject, $content));
             } catch (\Exception $e) {
                 \Log::error("Gagal kirim email status selesai: " . $e->getMessage());
             }
         }
 
+        // Logika Stok
         $statusNonAktif = ['Selesai', 'Batal'];
-
         if (!in_array($statusLama, $statusNonAktif) && in_array($request->status, $statusNonAktif)) {
-
             $product = Product::where('nama_produk', $order->nama_produk)->first();
-
             if ($product) {
                 $product->increment('stok');
             }
         }
 
-        return redirect()->route('admin.orders.index')->with('success', 'Pesanan diperbarui & Stok disesuaikan!');
+        return redirect()->route('admin.orders.index')->with('success', 'Pesanan diperbarui!');
     }
 }
