@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RentalReminder;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -32,25 +34,25 @@ class AdminOrderController extends Controller
         }
 
         // 2. Validasi Input
-        $validated = $request->validate([    
-            'nama_pelanggan'   => 'required|string|max:255',
-            'email'            => 'required|email|max:255',
-            'no_hp'            => 'required|numeric',
-            'alamat'           => 'required|string',
-            'kota_tujuan'      => 'required|string',
-            'nama_produk'      => 'required|string',
-            'start_date'       => 'required|date',
-            'end_date'         => 'required|date|after_or_equal:start_date',
+        $validated = $request->validate([
+            'nama_pelanggan' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'no_hp' => 'required|numeric',
+            'alamat' => 'required|string',
+            'kota_tujuan' => 'required|string',
+            'nama_produk' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'biaya_pengiriman' => 'required|numeric',
-            'total'            => 'required|numeric',
-            'ktp'              => 'nullable|image|max:5102',
-            'latitude'         => 'nullable|string',
-            'longitude'        => 'nullable|string',
+            'total' => 'required|numeric',
+            'ktp' => 'nullable|image|max:5102',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
         ]);
 
         $start = Carbon::parse($request->start_date);
         $end = Carbon::parse($request->end_date);
-        $diffDays = $start->diffInDays($end) + 1; 
+        $diffDays = $start->diffInDays($end) + 1;
         $lamaSewaString = $diffDays . ' Hari';
 
         $ktpPath = null;
@@ -61,25 +63,39 @@ class AdminOrderController extends Controller
         $subtotal = $request->total - $request->biaya_pengiriman;
 
         $order = Order::create([
-            'nama_pelanggan'   => $validated['nama_pelanggan'],
-            'email'            => $validated['email'],
-            'no_hp'            => $validated['no_hp'],
-            'alamat'           => $validated['alamat'],
-            'kota_tujuan'      => $validated['kota_tujuan'],
-            'ktp'              => $ktpPath,
-            'nama_produk'      => $validated['nama_produk'],
-            'start_date'       => $validated['start_date'],
-            'end_date'         => $validated['end_date'],
-            'lama_sewa'        => $lamaSewaString,
+            'nama_pelanggan' => $validated['nama_pelanggan'],
+            'email' => $validated['email'],
+            'no_hp' => $validated['no_hp'],
+            'alamat' => $validated['alamat'],
+            'kota_tujuan' => $validated['kota_tujuan'],
+            'ktp' => $ktpPath,
+            'nama_produk' => $validated['nama_produk'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'lama_sewa' => $lamaSewaString,
             'biaya_pengiriman' => $validated['biaya_pengiriman'],
-            'subtotal'         => $subtotal,
-            'total'            => $validated['total'],
-            'status'           => 'Konfirmasi',
-            'latitude'         => $request->latitude,
-            'longitude'        => $request->longitude,
+            'subtotal' => $subtotal,
+            'total' => $validated['total'],
+            'status' => 'Konfirmasi',
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
         ]);
 
-        $product->decrement('stok'); 
+        // TRIGGER EMAIL
+        try {
+            $subject = "Konfirmasi Pesanan - Baby Story";
+            $content = "Halo {$order->nama_pelanggan},\n\n" .
+                "Pesanan Anda untuk produk {$order->nama_produk} telah kami terima.\n" .
+                "Status saat ini: {$order->status}.\n\n" .
+                "Terima kasih telah mempercayakan kebutuhan bayi Anda kepada kami.";
+
+            Mail::to($order->email)->send(new RentalReminder($subject, $content));
+        } catch (\Exception $e) {
+            // Catat error jika pengiriman email gagal agar aplikasi tidak berhenti
+            \Log::error("Gagal kirim email: " . $e->getMessage());
+        }
+
+        $product->decrement('stok');
 
         return redirect()->route('admin.orders.index')->with('success', 'Pesanan berhasil ditambahkan & Stok berkurang!');
     }
@@ -93,8 +109,8 @@ class AdminOrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
-        
-        $statusLama = $order->status; 
+
+        $statusLama = $order->status;
 
         $request->validate([
             'status' => 'required',
@@ -110,13 +126,24 @@ class AdminOrderController extends Controller
             'total' => $request->total,
         ]);
 
-        
+        // TRIGGER EMAIL JIKA SELESAI
+        if ($request->status == 'Selesai' && $statusLama != 'Selesai') {
+            try {
+                Mail::send('reminder', ['content' => "Pesanan Anda #{$order->id} telah selesai. Terima kasih telah menyewa di Baby Story!"], function ($message) use ($order) {
+                    $message->to($order->email)
+                        ->subject('Pesanan Selesai - Baby Story');
+                });
+            } catch (\Exception $e) {
+                \Log::error("Gagal kirim email status selesai: " . $e->getMessage());
+            }
+        }
+
         $statusNonAktif = ['Selesai', 'Batal'];
-        
+
         if (!in_array($statusLama, $statusNonAktif) && in_array($request->status, $statusNonAktif)) {
-            
+
             $product = Product::where('nama_produk', $order->nama_produk)->first();
-            
+
             if ($product) {
                 $product->increment('stok');
             }
