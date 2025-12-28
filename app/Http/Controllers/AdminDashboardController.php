@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Support\Facades\Artisan;
 
 class AdminDashboardController extends Controller
 {
@@ -29,5 +30,17 @@ class AdminDashboardController extends Controller
             'totalRevenue',
             'latestOrders'
         ));
+    }
+
+    public function triggerReminder()
+    {
+        try {
+            // Memanggil signature command yang ada di SendRentalReminders.php
+            Artisan::call('reminder:email');
+
+            return back()->with('success', 'Email pengingat berhasil dikirim secara manual!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+        }
     }
 }

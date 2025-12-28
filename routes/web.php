@@ -47,6 +47,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // DASHBOARD
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+        Route::post('/trigger-reminder', [AdminDashboardController::class, 'triggerReminder'])->name('trigger.reminder');
+
         // ===================
         // ORDERS (PESANAN)
         // ===================
